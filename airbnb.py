@@ -18,13 +18,24 @@ collection = db["listingsAndReviews"]
 
 results = collection.find({})
 
+for document in results:
+    # Access necessary fields from the MongoDB document
+    name = document.get("name", "")
+    summary = document.get("summary", "")
+    space = document.get("space", "")
+    # Access other fields as needed
+    
+    # Utilize the extracted data within your Streamlit application
+    st.write(f"Name: {name}")
+    st.write(f"Summary: {summary}")
+    st.write(f"Space: {space}")
+    
 ############
 
 df = pd.DataFrame(results)
 
-# Remove missing values and duplicates
-df.dropna(inplace=True)
-df.drop_duplicates(inplace=True)
+subset_columns = ['address.street', 'address.market', 'address.country', 'availability.availability_30']
+df.drop_duplicates(subset=subset_columns, inplace=True)
 
 # Display DataFrame columns and first few rows
 st.write("DataFrame columns:", df.columns)

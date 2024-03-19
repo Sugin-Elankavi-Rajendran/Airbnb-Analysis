@@ -1,6 +1,10 @@
-#import streamlit as st
 from pymongo import MongoClient
 from client import mongo
+import pandas as pd
+import streamlit as st
+import folium
+
+############
 
 client = MongoClient(mongo)
 
@@ -8,19 +12,21 @@ db = client["airbnb"]
 
 collection = db["listings"]
 
-query = {
-    "accommodates": {"$gte": 6},
-    "price": {"$lte": 100}
-}
+results = collection.find({"city": "New York City"})
 
-results = collection.find(query)
+############
 
-for listing in results:
-    print("Name:", listing["name"])
-    print("Listing URL:", listing["listing_url"])
-    print("Price:", listing["price"])
-    print("Accommodates:", listing["accommodates"])
-    print("--------------")
+df = pd.DataFrame(results)
 
-#st.set_page_config(layout="wide")
+df.dropna(inplace=True)
+
+df.drop_duplicates(inplace=True)
+
+df['price'] = df['price'].astype(float)
+
+############
+
+st.set_page_config(layout="wide")
+
+st.title('Airbnb Distribution Map')
 

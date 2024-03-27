@@ -10,60 +10,7 @@ from streamlit_folium import folium_static
 
 ############
 
-client = MongoClient(mongo)
-
-db = client["sample_airbnb"]
-
-collection = db["listingsAndReviews"]
-
-results = collection.find({})
-
-for document in results:
-    # Access necessary fields from the MongoDB document
-    name = document.get("name", "")
-    summary = document.get("summary", "")
-    space = document.get("space", "")
-    # Access other fields as needed
-    
-    # Utilize the extracted data within your Streamlit application
-    st.write(f"Name: {name}")
-    st.write(f"Summary: {summary}")
-    st.write(f"Space: {space}")
-    
-############
-
-df = pd.DataFrame(results)
-
-subset_columns = ['address.street', 'address.market', 'address.country', 'availability.availability_30']
-df.drop_duplicates(subset=subset_columns, inplace=True)
-
-# Display DataFrame columns and first few rows
-st.write("DataFrame columns:", df.columns)
-st.write("First few rows of the DataFrame:", df.head())
-
-# Streamlit setup
 st.set_page_config(layout="wide")
-st.title('Airbnb Distribution Map')
+st.title('Airbnb Analysis')
 
-# Create map
-map_center = [41.1413, -8.61308]  # Coordinates for Porto, Portugal
-m = folium.Map(location=map_center, zoom_start=10)
 
-# Add markers for each listing
-for idx, row in df.iterrows():
-    folium.Marker(location=[row['location']['coordinates'][1], row['location']['coordinates'][0]], popup=row['address']['street']).add_to(m)
-
-# Display map
-folium_static(m)
-
-# Heatmap visualization of availability by month
-availability_by_month = df.groupby(df['availability']['availability_30']).size().reset_index(name='counts')
-plt.figure(figsize=(10, 6))
-sns.heatmap(availability_by_month.pivot('availability', 'availability_365', 'counts'), cmap='Blues')
-plt.title('Availability Heatmap by Month')
-plt.xlabel('Availability for 30 Days')
-plt.ylabel('Availability for 365 Days')
-st.pyplot()
-
-# Export cleaned data to CSV
-df.to_csv('cleaned_data.csv', index=False)

@@ -27,4 +27,5 @@ pip install streamlit pandas plotly
 - Pandas
 - Plotly
 
+PowerBI Dashboard: https://app.powerbi.com/reportEmbed?reportId=0ad7339a-045f-4c8c-a789-c9ce83949434&autoAuth=true&ctid=a5840ece-7ae5-48e0-9ebe-248ceb407d8b
 

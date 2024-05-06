@@ -91,102 +91,102 @@ if uploaded_file is not None:
 
 ############
 
-st.write("Geospatial Visualization")
+    st.write("Geospatial Visualization")
 
 
-def create_geospatial_viz(df):
-    fig = px.scatter_geo(df, lat='latitude', lon='longitude', color='price', hover_name='name',
-                         size='price', projection='natural earth')
+    def create_geospatial_viz(df):
+        fig = px.scatter_geo(df, lat='latitude', lon='longitude', color='price', hover_name='name',
+                            size='price', projection='natural earth')
 
-    fig.update_geos(
-        showland=True,
-        landcolor='rgb(243, 243, 243)',
-        countrycolor='white'
-    )
-    fig.update_layout(
-        title='Airbnb Listings Worldwide',
-        geo=dict(
-            showframe=False,
-            showcoastlines=True,
-            projection_type='natural earth'
+        fig.update_geos(
+            showland=True,
+            landcolor='rgb(243, 243, 243)',
+            countrycolor='white'
         )
-    )
+        fig.update_layout(
+            title='Airbnb Listings Worldwide',
+            geo=dict(
+                showframe=False,
+                showcoastlines=True,
+                projection_type='natural earth'
+            )
+        )
 
+        st.plotly_chart(fig)
+
+
+    create_geospatial_viz(df)
+
+    ############
+
+    def create_price_analysis(df):
+        fig = px.histogram(df, x="price", color="country", marginal="box", title="Price Distribution Across Different Countries")
+        st.plotly_chart(fig)
+
+        fig = px.box(df, x="property_type", y="price", title="Price Variation Across Property Types")
+        st.plotly_chart(fig)
+
+        df['first_review'] = pd.to_datetime(df['first_review'])
+        df['month'] = df['first_review'].dt.month
+        fig = px.box(df, x='month', y='price', title='Price Trends Over Months')
+        st.plotly_chart(fig)
+
+
+    create_price_analysis(df)
+
+    ############
+
+    def create_availability_analysis(df, availability_duration):
+        df['first_review'] = pd.to_datetime(df['first_review'])
+        df['year'] = df['first_review'].dt.year
+        if availability_duration == '30':
+            title = 'Availability Histogram for 30 Days'
+            availability_col = 'availability_30'
+        elif availability_duration == '60':
+            title = 'Availability Histogram for 60 Days'
+            availability_col = 'availability_60'
+        elif availability_duration == '90':
+            title = 'Availability Histogram for 90 Days'
+            availability_col = 'availability_90'
+        else: 
+            title = 'Availability Histogram for 1 Year'
+            availability_col = 'availability_365'
+
+        fig = px.histogram(df, x='year', y=availability_col, title=title)
+        st.plotly_chart(fig)
+
+        heatmap_data = df.groupby(['country', 'year'])[availability_col].mean().reset_index()
+        heatmap_fig = px.imshow(heatmap_data.pivot(index='country', columns='year', values=availability_col),
+                                labels=dict(x="Year", y="Country", color="Availability"),
+                                title=f'Availability Heatmap for {availability_duration} Days by Year',
+                                color_continuous_scale='Viridis')
+        st.plotly_chart(heatmap_fig)
+
+
+    availability_duration = st.selectbox("Select Availability Duration", ['30', '60', '90', '365'])
+
+    create_availability_analysis(df, availability_duration)
+
+    ############
+
+    regions = df['host_location'].unique()
+    selected_region = st.selectbox("Select Region or Neighborhood", regions, index=0)
+
+    region_data = df[df['host_location'] == selected_region]
+
+    fig = px.histogram(region_data, x="price", title=f"Price Distribution in {selected_region}")
     st.plotly_chart(fig)
 
+    ############
 
-create_geospatial_viz(df)
+    selected_region = st.selectbox("Select Region or Neighborhood", ["All"] + list(df['host_location'].unique()))
+    selected_property_type = st.selectbox("Select Property Type", ["All"] + list(df['property_type'].unique()))
 
-############
+    filtered_df = df.copy()
+    if selected_region != "All":
+        filtered_df = filtered_df[filtered_df['host_location'] == selected_region]
+    if selected_property_type != "All":
+        filtered_df = filtered_df[filtered_df['property_type'] == selected_property_type]
 
-def create_price_analysis(df):
-    fig = px.histogram(df, x="price", color="country", marginal="box", title="Price Distribution Across Different Countries")
+    fig = px.histogram(filtered_df, x="price", title="Price Distribution")
     st.plotly_chart(fig)
-
-    fig = px.box(df, x="property_type", y="price", title="Price Variation Across Property Types")
-    st.plotly_chart(fig)
-
-    df['first_review'] = pd.to_datetime(df['first_review'])
-    df['month'] = df['first_review'].dt.month
-    fig = px.box(df, x='month', y='price', title='Price Trends Over Months')
-    st.plotly_chart(fig)
-
-
-create_price_analysis(df)
-
-############
-
-def create_availability_analysis(df, availability_duration):
-    df['first_review'] = pd.to_datetime(df['first_review'])
-    df['year'] = df['first_review'].dt.year
-    if availability_duration == '30':
-        title = 'Availability Histogram for 30 Days'
-        availability_col = 'availability_30'
-    elif availability_duration == '60':
-        title = 'Availability Histogram for 60 Days'
-        availability_col = 'availability_60'
-    elif availability_duration == '90':
-        title = 'Availability Histogram for 90 Days'
-        availability_col = 'availability_90'
-    else: 
-        title = 'Availability Histogram for 1 Year'
-        availability_col = 'availability_365'
-
-    fig = px.histogram(df, x='year', y=availability_col, title=title)
-    st.plotly_chart(fig)
-
-    heatmap_data = df.groupby(['country', 'year'])[availability_col].mean().reset_index()
-    heatmap_fig = px.imshow(heatmap_data.pivot(index='country', columns='year', values=availability_col),
-                            labels=dict(x="Year", y="Country", color="Availability"),
-                            title=f'Availability Heatmap for {availability_duration} Days by Year',
-                            color_continuous_scale='Viridis')
-    st.plotly_chart(heatmap_fig)
-
-
-availability_duration = st.selectbox("Select Availability Duration", ['30', '60', '90', '365'])
-
-create_availability_analysis(df, availability_duration)
-
-############
-
-regions = df['host_location'].unique()
-selected_region = st.selectbox("Select Region or Neighborhood", regions, index=0)
-
-region_data = df[df['host_location'] == selected_region]
-
-fig = px.histogram(region_data, x="price", title=f"Price Distribution in {selected_region}")
-st.plotly_chart(fig)
-
-############
-
-selected_region = st.selectbox("Select Region or Neighborhood", ["All"] + list(df['host_location'].unique()))
-selected_property_type = st.selectbox("Select Property Type", ["All"] + list(df['property_type'].unique()))
-
-filtered_df = df.copy()
-if selected_region != "All":
-    filtered_df = filtered_df[filtered_df['host_location'] == selected_region]
-if selected_property_type != "All":
-    filtered_df = filtered_df[filtered_df['property_type'] == selected_property_type]
-
-fig = px.histogram(filtered_df, x="price", title="Price Distribution")
-st.plotly_chart(fig)

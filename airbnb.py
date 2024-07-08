@@ -14,11 +14,11 @@ uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 if uploaded_file is not None:
     st.write("File uploaded successfully!")
     df = pd.read_csv(uploaded_file)
-    st.write("Data Preview:")
-    st.write(df.head())
+    # st.write("Data Preview:")
+    # st.write(df.head())
 
     missing_values = df.isnull().sum()
-    st.write("Missing values:\n", missing_values)
+    # st.write("Missing values:\n", missing_values)
     df.drop(['summary', 'space', 'description', 'neighborhood_overview',
              'notes', 'transit', 'access', 'interaction', 'house_rules',
              'cancellation_policy', 'last_scraped', 'calendar_last_scraped',
@@ -85,8 +85,8 @@ if uploaded_file is not None:
     df.drop(columns=['address'], inplace=True)
 
     missing_values = df.isnull().sum()
-    st.write("Missing values:\n", missing_values)
-    st.write(df.head())
+    # st.write("Missing values:\n", missing_values)
+    # st.write(df.head())
     # df.to_csv("cleaned_airbnb_data.csv", index=False)
 
 ############

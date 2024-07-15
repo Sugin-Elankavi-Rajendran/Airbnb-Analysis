@@ -1,24 +1,18 @@
 import streamlit as st
 import pandas as pd
 import ast
-import datetime
 import plotly.express as px
 
-############
-
+# Set page layout
 st.set_page_config(layout="wide")
 st.title('Airbnb Analysis')
 
+# File uploader
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
-if uploaded_file is not None:
-    st.write("File uploaded successfully!")
+# Function to clean and preprocess the data
+def clean_data(uploaded_file):
     df = pd.read_csv(uploaded_file)
-    # st.write("Data Preview:")
-    # st.write(df.head())
-
-    missing_values = df.isnull().sum()
-    # st.write("Missing values:\n", missing_values)
     df.drop(['summary', 'space', 'description', 'neighborhood_overview',
              'notes', 'transit', 'access', 'interaction', 'house_rules',
              'cancellation_policy', 'last_scraped', 'calendar_last_scraped',
@@ -84,16 +78,9 @@ if uploaded_file is not None:
 
     df.drop(columns=['address'], inplace=True)
 
-    missing_values = df.isnull().sum()
-    # st.write("Missing values:\n", missing_values)
-    # st.write(df.head())
-    # df.to_csv("cleaned_airbnb_data.csv", index=False)
+    return df
 
-############
-
-st.write("Geospatial Visualization")
-
-
+# Function to create geospatial visualization
 def create_geospatial_viz(df):
     fig = px.scatter_geo(df, lat='latitude', lon='longitude', color='price', hover_name='name',
                          size='price', projection='natural earth')
@@ -114,11 +101,7 @@ def create_geospatial_viz(df):
 
     st.plotly_chart(fig)
 
-
-create_geospatial_viz(df)
-
-############
-
+# Function to create price analysis visualization
 def create_price_analysis(df):
     fig = px.histogram(df, x="price", color="country", marginal="box", title="Price Distribution Across Different Countries")
     st.plotly_chart(fig)
@@ -131,11 +114,7 @@ def create_price_analysis(df):
     fig = px.box(df, x='month', y='price', title='Price Trends Over Months')
     st.plotly_chart(fig)
 
-
-create_price_analysis(df)
-
-############
-
+# Function to create availability analysis visualization
 def create_availability_analysis(df, availability_duration):
     df['first_review'] = pd.to_datetime(df['first_review'])
     df['year'] = df['first_review'].dt.year
@@ -162,31 +141,49 @@ def create_availability_analysis(df, availability_duration):
                             color_continuous_scale='Viridis')
     st.plotly_chart(heatmap_fig)
 
+# Function to create region-based price distribution visualization
+def create_region_price_distribution(df):
+    regions = df['host_location'].unique()
+    selected_region = st.selectbox("Select Region or Neighborhood", regions, index=0)
 
-availability_duration = st.selectbox("Select Availability Duration", ['30', '60', '90', '365'])
+    region_data = df[df['host_location'] == selected_region]
 
-create_availability_analysis(df, availability_duration)
+    fig = px.histogram(region_data, x="price", title=f"Price Distribution in {selected_region}")
+    st.plotly_chart(fig)
 
-############
+# Function to create filtered analysis visualization
+def create_filtered_analysis(df):
+    selected_region = st.selectbox("Select Region or Neighborhood", ["All"] + list(df['host_location'].unique()))
+    selected_property_type = st.selectbox("Select Property Type", ["All"] + list(df['property_type'].unique()))
 
-regions = df['host_location'].unique()
-selected_region = st.selectbox("Select Region or Neighborhood", regions, index=0)
+    filtered_df = df.copy()
+    if selected_region != "All":
+        filtered_df = filtered_df[filtered_df['host_location'] == selected_region]
+    if selected_property_type != "All":
+        filtered_df = filtered_df[filtered_property_type == selected_property_type]
 
-region_data = df[df['host_location'] == selected_region]
+    fig = px.histogram(filtered_df, x="price", title="Price Distribution")
+    st.plotly_chart(fig)
 
-fig = px.histogram(region_data, x="price", title=f"Price Distribution in {selected_region}")
-st.plotly_chart(fig)
+# Main app logic
+if uploaded_file is not None:
+    st.write("File uploaded successfully!")
+    df = clean_data(uploaded_file)
 
-############
+    st.write("Geospatial Visualization")
+    create_geospatial_viz(df)
 
-selected_region = st.selectbox("Select Region or Neighborhood", ["All"] + list(df['host_location'].unique()))
-selected_property_type = st.selectbox("Select Property Type", ["All"] + list(df['property_type'].unique()))
+    st.write("Price Analysis")
+    create_price_analysis(df)
 
-filtered_df = df.copy()
-if selected_region != "All":
-    filtered_df = filtered_df[filtered_df['host_location'] == selected_region]
-if selected_property_type != "All":
-    filtered_df = filtered_df[filtered_df['property_type'] == selected_property_type]
+    st.write("Availability Analysis")
+    availability_duration = st.selectbox("Select Availability Duration", ['30', '60', '90', '365'])
+    create_availability_analysis(df, availability_duration)
 
-fig = px.histogram(filtered_df, x="price", title="Price Distribution")
-st.plotly_chart(fig)
+    st.write("Region-Based Price Distribution")
+    create_region_price_distribution(df)
+
+    st.write("Filtered Analysis")
+    create_filtered_analysis(df)
+else:
+    st.write("Please upload a CSV file to proceed.")
